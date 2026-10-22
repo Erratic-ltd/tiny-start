@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#3b6e8f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Tiny Start">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>Tiny Start</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" href="icon-192.png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="stylesheet" href="katex/katex.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div id="homeScreen">
+    <h1>Tiny Start</h1>
+    <p id="verse" class="quote"></p>
+
+    <p class="small">Pick a course</p>
+    <div id="courseTabs" class="tabs"></div>
+    <p id="emptyHome" class="small hidden">No courses yet. Open "Manage questions" below to add one.</p>
+
+    <details>
+      <summary>Manage questions</summary>
+
+      <h2>Add a question</h2>
+      <form id="addForm">
+        <select id="fType">
+          <option value="choice">Multiple choice</option>
+          <option value="typed">Typed answer</option>
+          <option value="method">Spot the method (exam question)</option>
+        </select>
+        <input id="fCourse" list="courseList" placeholder="Course (e.g. EMTH119)" required>
+        <datalist id="courseList"></datalist>
+        <input id="fTopic" placeholder="Topic (e.g. Differential equations)" required>
+        <input id="fQuestion" placeholder="Question" required>
+        <input id="fAnswer" placeholder="Correct answer" required>
+
+        <div id="choiceFields">
+          <input id="fWrong1" placeholder="Other option 1">
+          <input id="fWrong2" placeholder="Other option 2 (optional)">
+          <input id="fWrong3" placeholder="Other option 3 (optional)">
+        </div>
+
+        <div id="typedFields" class="hidden">
+          <select id="fCheck">
+            <option value="text">Plain text answer</option>
+            <option value="math">Maths answer (checked by the maths checker)</option>
+          </select>
+          <input id="fPrefix" placeholder='Text shown before the box, e.g. y =  (optional, maths only)'>
+          <input id="fAccept" placeholder="Other accepted answers, separated by commas (plain text only, optional)">
+        </div>
+
+        <input id="fExplanation" placeholder="Hint or explanation (optional)">
+        <button type="submit">Add question</button>
+      </form>
+
+      <h2>Import questions</h2>
+      <p class="small">Paste a list of questions in JSON format, like the ones I make for you in chat.</p>
+      <textarea id="importText" rows="6" placeholder='[{"course":"Maths","topic":"Rules","type":"typed","question":"...","answer":"..."}]'></textarea>
+      <button id="importBtn">Import</button>
+
+      <p class="small">Or import a file exported from another device:</p>
+      <input id="importFile" type="file" accept=".json,application/json">
+
+      <h2>My verses</h2>
+      <p class="small">Type or paste a verse with its reference. These stay on this device only.</p>
+      <textarea id="verseText" rows="3" placeholder="Verse text (Book 1:1)"></textarea>
+      <button id="addVerseBtn">Add verse</button>
+
+      <h2>All questions</h2>
+      <div id="manageList"></div>
+
+      <h2>Backup</h2>
+      <button id="exportBtn">Export my questions</button>
+      <button id="resetBtn" class="quiet">Reset to starter questions</button>
+      <button id="resetStatsBtn" class="quiet">Forget which questions I've been missing</button>
+
+      <p id="message" class="small"></p>
+    </details>
+  </div>
+
+  <div id="courseScreen" class="hidden">
+    <button id="backHome" class="quiet">← Back</button>
+    <h2 id="courseTitle"></h2>
+
+    <p class="small">Untick any topics you want to skip.</p>
+    <div id="topicList" class="topics"></div>
+
+    <label for="sessionLength" class="small">How many questions? (1 to 50)</label>
+    <input id="sessionLength" type="number" min="1" max="50" inputmode="numeric" placeholder="e.g. 10">
+    <div class="quickLengths">
+      <button id="len5" class="quiet">5</button>
+      <button id="len15" class="quiet">15</button>
+      <button id="len30" class="quiet">30</button>
+    </div>
+
+    <p id="courseMessage" class="small"></p>
+    <button id="startBtn">Start</button>
+  </div>
+
+  <div id="quizScreen" class="hidden">
+    <p id="progress" class="small"></p>
+
+    <div class="card" id="card">
+      <p id="meta" class="meta"></p>
+      <p id="question"></p>
+
+      <div id="options" class="options"></div>
+
+      <form id="typedForm" class="hidden" autocomplete="off">
+        <div class="typedRow">
+          <span id="prefix" class="prefix hidden"></span>
+          <input id="typedInput" placeholder="Type your answer" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+          <button type="button" id="infoBtn" class="infoBtn hidden" aria-label="How to type maths">i</button>
+        </div>
+
+        <div id="symbols" class="symbols hidden">
+          <button type="button" data-insert="^">^</button>
+          <button type="button" data-insert="*">*</button>
+          <button type="button" data-insert="/">/</button>
+          <button type="button" data-insert="(">(</button>
+          <button type="button" data-insert=")">)</button>
+          <button type="button" data-insert="=">=</button>
+          <button type="button" data-insert="sqrt(">sqrt</button>
+          <button type="button" data-insert="abs(">abs</button>
+        </div>
+
+        <div id="preview" class="preview hidden"></div>
+
+        <div id="typingHelp" class="info hidden">
+          <p class="infoTitle">How to type maths</p>
+          <ul>
+            <li>Use <b>*</b> for multiplying: <code>2*x</code>, never <code>2x</code>. Between letters too: <code>x*y</code>.</li>
+            <li>Powers: <code>x^2</code>. Division: <code>1/2</code>. Brackets matter: <code>x^9+5</code> is not <code>x^(9+5)</code>.</li>
+            <li>Everything in lowercase. Functions: <code>sin(x)</code> <code>cos(x)</code> <code>tan(x)</code> <code>sqrt(x)</code> <code>abs(x)</code> <code>ln(x)</code> <code>exp(x)</code>. Also <code>e</code> and <code>pi</code>, like <code>e^(2*x)</code>.</li>
+            <li>Arbitrary constants: use <b>c</b> when there is one. When there are two or more, use <b>c1, c2, c3 ...</b></li>
+            <li>If <b>y =</b> (or similar) is already in front of the box, type only what comes after it. If the question asks for an equation, type the whole thing with an = sign.</li>
+            <li>The box under your answer shows how the app read it. Check it before pressing Check.</li>
+          </ul>
+        </div>
+
+        <button type="submit" id="checkBtn">Check</button>
+      </form>
+
+      <div id="feedback" class="feedback hidden"></div>
+      <button id="next" class="hidden">Next tiny step</button>
+    </div>
+
+    <div id="sessionEnd" class="hidden">
+      <p>That was a good start. Come back whenever you like.</p>
+      <button id="anotherBtn">Another session</button>
+    </div>
+
+    <button id="leave" class="quiet">Leave for now</button>
+  </div>
+
+  <script src="katex/katex.min.js"></script>
+  <script src="math.js"></script>
+  <script src="questions.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
